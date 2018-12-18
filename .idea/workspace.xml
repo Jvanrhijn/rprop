@@ -10,7 +10,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9a89edd3-a61d-4534-93af-84268bc5c190" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/airfoil/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/lib/airfoil/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/airfoil/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/lib/airfoil/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/math/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/lib/math/src/lib.rs" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -19,19 +22,37 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="FileEditorManager">
-    <leaf>
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/lib/airfoil/src/lib.rs">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="224">
-              <caret line="37" column="48" selection-start-line="37" selection-start-column="48" selection-end-line="37" selection-end-column="48" />
+            <state relative-caret-position="221">
+              <caret line="17" column="43" selection-start-line="17" selection-start-column="43" selection-end-line="17" selection-end-column="43" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/lib/airfoil/Cargo.toml">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="119">
+              <caret line="7" column="25" selection-start-line="7" selection-start-column="25" selection-end-line="7" selection-end-column="25" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/lib/math/src/lib.rs">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="391">
+              <caret line="23" column="3" selection-start-line="23" selection-start-column="3" selection-end-line="23" selection-end-column="3" />
               <folding>
-                <element signature="e#189#190#0" expanded="true" />
-                <element signature="e#217#218#0" expanded="true" />
-                <element signature="e#310#311#0" expanded="true" />
-                <element signature="e#355#356#0" expanded="true" />
-                <element signature="e#404#405#0" expanded="true" />
-                <element signature="e#423#424#0" expanded="true" />
+                <element signature="e#163#164#0" expanded="true" />
+                <element signature="e#210#211#0" expanded="true" />
+                <element signature="e#283#284#0" expanded="true" />
+                <element signature="e#328#329#0" expanded="true" />
+                <element signature="e#376#377#0" expanded="true" />
+                <element signature="e#395#396#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -45,13 +66,15 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
+        <option value="$PROJECT_DIR$/lib/airfoil/Cargo.toml" />
+        <option value="$PROJECT_DIR$/lib/math/src/lib.rs" />
         <option value="$PROJECT_DIR$/lib/airfoil/src/lib.rs" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="1678" />
-    <option name="y" value="-18" />
+    <option name="x" value="1693" />
+    <option name="y" value="-3" />
     <option name="width" value="1894" />
     <option name="height" value="1070" />
   </component>
@@ -84,6 +107,19 @@
               <item name="rprop" type="462c0819:PsiDirectoryNode" />
               <item name="lib" type="462c0819:PsiDirectoryNode" />
               <item name="airfoil" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="rprop" type="b2602c69:ProjectViewProjectNode" />
+              <item name="rprop" type="462c0819:PsiDirectoryNode" />
+              <item name="lib" type="462c0819:PsiDirectoryNode" />
+              <item name="math" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="rprop" type="b2602c69:ProjectViewProjectNode" />
+              <item name="rprop" type="462c0819:PsiDirectoryNode" />
+              <item name="lib" type="462c0819:PsiDirectoryNode" />
+              <item name="math" type="462c0819:PsiDirectoryNode" />
               <item name="src" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
@@ -127,18 +163,19 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1545159409544</updated>
-      <workItem from="1545159410765" duration="1211000" />
+      <workItem from="1545159410765" duration="1410000" />
+      <workItem from="1545168642271" duration="1001000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="1211000" />
+    <option name="totallyTimeSpent" value="2411000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="1678" y="-18" width="1894" height="1070" extended-state="0" />
+    <frame x="1693" y="-3" width="1894" height="1070" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.15038002" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.15200868" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -163,18 +200,35 @@
     <option name="version" value="1" />
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/lib/math/Cargo.toml">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/math/src/lib.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="391">
+          <caret line="23" column="3" selection-start-line="23" selection-start-column="3" selection-end-line="23" selection-end-column="3" />
+          <folding>
+            <element signature="e#163#164#0" expanded="true" />
+            <element signature="e#210#211#0" expanded="true" />
+            <element signature="e#283#284#0" expanded="true" />
+            <element signature="e#328#329#0" expanded="true" />
+            <element signature="e#376#377#0" expanded="true" />
+            <element signature="e#395#396#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/airfoil/Cargo.toml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="119">
+          <caret line="7" column="25" selection-start-line="7" selection-start-column="25" selection-end-line="7" selection-end-column="25" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/lib/airfoil/src/lib.rs">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="224">
-          <caret line="37" column="48" selection-start-line="37" selection-start-column="48" selection-end-line="37" selection-end-column="48" />
-          <folding>
-            <element signature="e#189#190#0" expanded="true" />
-            <element signature="e#217#218#0" expanded="true" />
-            <element signature="e#310#311#0" expanded="true" />
-            <element signature="e#355#356#0" expanded="true" />
-            <element signature="e#404#405#0" expanded="true" />
-            <element signature="e#423#424#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="221">
+          <caret line="17" column="43" selection-start-line="17" selection-start-column="43" selection-end-line="17" selection-end-column="43" />
         </state>
       </provider>
     </entry>

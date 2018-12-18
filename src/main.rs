@@ -1,5 +1,5 @@
-use math::square;
+use math::trapz;
 
 fn main() {
-    println!("4^2 = {}", square(4));
+    println!("Hello!");
 }
