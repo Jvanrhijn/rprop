@@ -1,4 +1,11 @@
 [[package]]
+name = "airfoil"
+version = "0.1.0"
+dependencies = [
+ "math 0.1.0",
+]
+
+[[package]]
 name = "math"
 version = "0.1.0"
 
@@ -6,6 +13,7 @@ version = "0.1.0"
 name = "rprop"
 version = "0.1.0"
 dependencies = [
+ "airfoil 0.1.0",
  "math 0.1.0",
 ]
 
