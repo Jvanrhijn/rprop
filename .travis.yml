@@ -4,7 +4,7 @@ matrix:
   include:
     - os: linux
       rust: nightly
-      dist: trusty
+      dist: xenial 
 
 sudo: required
 
@@ -21,7 +21,7 @@ script:
 addons:
   apt:
     packages:
-      - libgsl0dbl
+      - libgsl-dev
       - cmake
       - gcc
 
