@@ -21,7 +21,9 @@ addons:
       - gcc
       - binutils-dev
       - libiberty-dev
-      - libgsl0-dev
+
+before_script:
+  - sudo apt-get install libgsl0-dev
 
 after_success: |
   wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz &&
