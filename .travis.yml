@@ -21,9 +21,14 @@ script:
 addons:
   apt:
     packages:
-      - libgsl-dev
+      - libcurl4-openssl-dev
+      - libelf-dev
+      - libdw-dev
       - cmake
       - gcc
+      - binutils-dev
+      - libiberty-dev
+      - libgsl-dev
 
 after_success: |
   wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz &&
