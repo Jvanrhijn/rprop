@@ -8,6 +8,10 @@ rust:
 cache:
   - cargo
 
+env:
+  global:
+    - LD_LIBRARY_PATH=/usr/local/lib
+
 script:
   - cargo test --all
 
