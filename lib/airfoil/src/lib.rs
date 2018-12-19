@@ -1,8 +1,9 @@
-// std
-use std::vec::Vec;
-use std::io::prelude::*;
-use std::io::{self, BufReader, BufRead};
-use std::fs::File;
+use std::{
+    vec::Vec,
+    io::prelude::*,
+    io::{self, BufReader, BufRead},
+    fs::File
+};
 // first party
 use math;
 

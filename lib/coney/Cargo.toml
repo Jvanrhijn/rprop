@@ -6,3 +6,4 @@ edition = "2018"
 
 [dependencies]
 propeller = { path = "../propeller" }
+math = { path = "../math" }

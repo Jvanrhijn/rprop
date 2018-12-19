@@ -1,5 +1,6 @@
-use std::error;
-use std::fmt;
+use std::{f64::consts::PI, error, fmt};
+extern crate rgsl;
+use rgsl::{elliptic, Mode};
 
 #[derive(Copy, Clone, Debug)]
 pub struct MathError;
@@ -36,6 +37,26 @@ pub fn trapz(x: &[f64], y: &[f64]) -> Result<f64, MathError> {
         },
         false => Err(MathError)
     }
+}
+
+// Legendre function of second kind and minux half order
+pub fn legendre_2mhalf(q: f64) -> f64 {
+    let k = (2.0/(q + 1.0)).sqrt();
+    // complete elliptic integral of first kind in legendre form
+    k*elliptic::legendre::complete::ellint_Ecomp(k, Mode::PrecDouble)
+}
+
+pub fn heuman(phi: f64, alpha: f64) -> f64 {
+    // complete elliptic integral of first kind in legendre form
+    let e_comp_first = elliptic::legendre::complete::ellint_Kcomp(alpha.sin(), Mode::PrecDouble);
+    // complete elliptic integral of second kind in legendre form
+    let e_comp_second = elliptic::legendre::complete::ellint_Ecomp(alpha.sin(), Mode::PrecDouble);
+    // incomplete elliptic integral of first kind
+    let e_inc_first = elliptic::legendre::incomplete::ellint_F((PI/2.0 - alpha).sin().sqrt(), phi.sin(), Mode::PrecDouble);
+    // incomplete elliptic integral of second kind
+    let e_inc_second = elliptic::legendre::incomplete::ellint_E((PI/2.0 - alpha).sin().sqrt(), phi.sin(), Mode::PrecDouble);
+    // heumann function
+    2.0/PI*(e_comp_first*e_inc_second - (e_comp_first - e_comp_second)*e_inc_first)
 }
 
 #[cfg(test)]
