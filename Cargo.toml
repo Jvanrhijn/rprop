@@ -8,6 +8,7 @@ edition = "2018"
 members = ["lib/airfoil", "lib/math"]
 
 [dependencies]
+GSL = "1.1.0"
 math = { path = "lib/math" }
 airfoil = { path = "lib/airfoil" }
 propeller = { path = "lib/propeller" }
