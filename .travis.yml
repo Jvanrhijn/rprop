@@ -1,9 +1,12 @@
 language: rust
 
-sudo: required
+matrix:
+  include:
+    - os: linux
+      rust: nightly
+      dist: trusty
 
-rust:
-  - nightly
+sudo: required
 
 cache:
   - cargo
