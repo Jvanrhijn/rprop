@@ -1,12 +1,19 @@
 language: rust
 
-sudo: required
+matrix:
+  include:
+    - os: linux
+      rust: nightly
+      dist: xenial 
 
-rust:
-  - nightly
+sudo: required
 
 cache:
   - cargo
+
+env:
+  global:
+    - LD_LIBRARY_PATH=/usr/local/lib
 
 script:
   - cargo test --all
@@ -21,9 +28,7 @@ addons:
       - gcc
       - binutils-dev
       - libiberty-dev
-
-before_script:
-  - sudo apt-get install libgsl0-dev
+      - libgsl-dev
 
 after_success: |
   wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz &&
