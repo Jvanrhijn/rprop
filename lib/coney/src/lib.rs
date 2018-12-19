@@ -1,3 +1,4 @@
+use propeller;
 mod flow;
 
 #[cfg(test)]
