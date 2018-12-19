@@ -10,3 +10,4 @@ members = ["lib/airfoil", "lib/math"]
 [dependencies]
 math = { path = "lib/math" }
 airfoil = { path = "lib/airfoil" }
+propeller = { path = "lib/propeller" }

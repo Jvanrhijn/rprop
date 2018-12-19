@@ -10,10 +10,18 @@ name = "math"
 version = "0.1.0"
 
 [[package]]
+name = "propeller"
+version = "0.1.0"
+dependencies = [
+ "airfoil 0.1.0",
+]
+
+[[package]]
 name = "rprop"
 version = "0.1.0"
 dependencies = [
  "airfoil 0.1.0",
  "math 0.1.0",
+ "propeller 0.1.0",
 ]
 
