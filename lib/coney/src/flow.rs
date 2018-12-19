@@ -54,3 +54,7 @@ fn c2_jl(xf: f64, rcjm: f64, rvlp: f64) -> f64 {
         PI + frac + heuman
     }
 }
+
+struct FlowField {
+
+}
