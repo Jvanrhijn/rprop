@@ -1,5 +1,5 @@
 use std::vec::Vec;
-use airfoil::{Airfoil, naca2414};
+use airfoil::Airfoil;
 
 #[derive(Clone)]
 pub struct Propeller {
@@ -10,6 +10,12 @@ pub struct Propeller {
     vortex_points: Vec<f64>,
     radial_increment: Vec<f64>,
     dimensional: bool
+}
+
+impl Propeller {
+    fn radial_increment(&self) -> &Vec<f64> {
+        &self.radial_increment
+    }
 }
 
 #[derive(Clone)]
@@ -100,7 +106,7 @@ impl PropellerBuilder {
             radius: self.radius,
             hub_radius: self.hub_radius,
             chords: self.chords.unwrap_or(vec![0.0; self.num_panels]),
-            base_airfoil: self.airfoil.unwrap_or(naca2414()),
+            base_airfoil: self.airfoil.unwrap_or(Airfoil::default()),
         };
         let hydro_data = HydrodynamicData{
             axial_inflow: self.axial_inflow.unwrap_or(vec![self.ship_speed; self.num_panels]),

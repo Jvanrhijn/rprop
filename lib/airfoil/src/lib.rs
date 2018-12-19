@@ -21,7 +21,7 @@ impl Airfoil {
         let file = File::open(fpath)?;
         for line in BufReader::new(&file).lines() {
             let coordinates = line?.split_whitespace().map(|x| x.parse::<f64>()
-                .expect("Failed to parse f64")).collect::<Vec<f64>>();
+                .expect("Failed to parse f64")).collect::<Vec<_>>();
             xvals.push(coordinates[0]);
             yvals.push(coordinates[1]);
         }
@@ -62,7 +62,13 @@ impl Airfoil {
     }
 }
 
-pub fn naca2414() -> Airfoil {
+impl Default for Airfoil {
+    fn default() -> Self {
+        naca2414()
+    }
+}
+
+fn naca2414() -> Airfoil {
     Airfoil::new(
         vec![
                 1.00000,
@@ -193,15 +199,22 @@ pub fn naca2414() -> Airfoil {
 }
 
 #[cfg(test)]
-mod     tests {
-        use super::Airfoil;
-        const EPS: f64 = 1e-16;
-        #[test]
-        fn area() {
-            let base = 1.0;
-            let height = 1.0;
-            let airfoil = Airfoil::new(vec![base, 0.0, 0.0, base], vec![height, 0.00, 0.00, -height]);
-            let area = base*height;
-            assert!((airfoil.area().unwrap() - area) < EPS);
-        }
+mod tests {
+    use super::Airfoil;
+    const EPS: f64 = 1e-16;
+
+    #[test]
+    fn area() {
+        let base = 1.0;
+        let height = 1.0;
+        let airfoil = Airfoil::new(vec![base, 0.0, 0.0, base], vec![height, 0.00, 0.00, -height]);
+        let area = base*height;
+        assert!((airfoil.area().unwrap() - area).abs() < EPS);
+    }
+
+    #[test]
+    fn default_foil() {
+        let foil = Airfoil::default();
+        assert!((foil.area().unwrap() - 0.096).abs() < 0.001);
+    }
 }
