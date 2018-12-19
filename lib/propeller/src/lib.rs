@@ -92,6 +92,13 @@ pub struct PropellerBuilder {
 
 }
 
+struct DimensionScale {
+    pub length: f64,
+    pub speed: f64,
+    pub rotation_speed: f64,
+    pub force: f64,
+}
+
 impl PropellerBuilder {
     // required data for building propeller
     pub fn new(radius: f64, hub_radius: f64, thrust: f64, rot_speed: f64, ship_speed: f64, num_panels: usize) -> Self {
@@ -126,39 +133,50 @@ impl PropellerBuilder {
         self
     }
 
-    pub fn build(self) -> Propeller {
-        // TODO: apply nondimensionalization
+    pub fn build(mut self) -> Propeller {
+        // TODO: more idiomatic solution for this
+        let dim = DimensionScale{
+            length: if self.dim {1.0} else {self.radius},
+            speed: if self.dim {1.0} else {self.ship_speed},
+            rotation_speed: if self.dim{1.0} else {self.rot_speed},
+            force: if self.dim {1.0} else {self.thrust}
+        };
         let geometry = Geometry{
-            radius: self.radius,
-            hub_radius: self.hub_radius,
-            chords: self.chords.unwrap_or(vec![0.0; self.num_panels]),
+            radius: self.radius/dim.length,
+            hub_radius: self.hub_radius/dim.length,
+            chords: self.chords.unwrap_or(vec![0.0; self.num_panels]).into_iter().map(|c| c/dim.length).collect(),
             base_airfoil: self.airfoil.unwrap_or(Airfoil::default()),
         };
         let hydro_data = HydrodynamicData{
-            axial_inflow: self.axial_inflow.unwrap_or(vec![self.ship_speed; self.num_panels]),
-            tangential_inflow: self.tangential_inflow.unwrap_or(vec![0.0; self.num_panels]),
+            axial_inflow: self.axial_inflow.unwrap_or(vec![self.ship_speed; self.num_panels])
+                .into_iter().map(|v| v/dim.speed).collect(),
+            tangential_inflow: self.tangential_inflow.unwrap_or(vec![0.0; self.num_panels])
+                .into_iter().map(|v| v/dim.speed).collect(),
             // TODO: provide good default values for these
-            axial_vel_ind: vec![0.0; self.num_panels],
-            tangential_vel_ind: vec![0.0; self.num_panels],
+            axial_vel_ind: vec![0.0; self.num_panels]
+                .into_iter().map(|v| v/dim.speed).collect(),
+            tangential_vel_ind: vec![0.0; self.num_panels]
+                .into_iter().map(|v| v/dim.speed).collect(),
             hydro_pitch: vec![0.0; self.num_panels],
             drag_coeffs: self.drag_coeffs.unwrap_or(vec![0.0; self.num_panels]),
-            circulation: vec![0.0; self.num_panels],
+            circulation: vec![0.0; self.num_panels]
+                .into_iter().map(|c| c/(dim.length*dim.speed)).collect(),
         };
         let specs = DesignSpecs{
-            rot_speed: self.rot_speed,
-            ship_speed: self.ship_speed,
-            thrust: self.thrust,
+            rot_speed: self.rot_speed/dim.rotation_speed,
+            ship_speed: self.ship_speed/dim.speed,
+            thrust: self.thrust/dim.force,
             num_panels: self.num_panels
         };
         // generate vortex/control points
-        let dr = (self.radius - self.hub_radius)/(self.num_panels as f64 + 0.25);
-        let mut vortex_points = vec![self.hub_radius];
-        let mut control_points = vec![self.hub_radius + 0.5*dr];
+        let dr = (self.radius - self.hub_radius)/(self.num_panels as f64 + 0.25)/dim.length;
+        let mut vortex_points = vec![self.hub_radius/dim.length];
+        let mut control_points = vec![self.hub_radius/dim.length + 0.5*dr];
         for i in 1..self.num_panels {
             vortex_points.push(vortex_points[i-1] + dr);
             control_points.push(control_points[i-1] + dr);
 
-            vortex_points.push(self.radius - 0.25*dr); // tip inset
+            vortex_points.push(self.radius/dim.length - 0.25*dr); // tip inset
         }
         let radial_increment = vortex_points.iter().zip(vortex_points[1..].iter())
             .map(|(rv, rvp1)| rvp1 - rv).collect::<Vec<_>>();
@@ -182,6 +200,19 @@ mod tests {
         let propeller = PropellerBuilder::new(1.0, 0.25, 1000.0, 200.0, 10.0, 20)
             .tangential_inflow(vec![0.1; 20])
             .axial_inflow(vec![11.0; 20])
+            .dimensional(true)
             .build();
+        propeller.hydro_data().axial_inflow().iter().for_each(|v| assert_eq!(*v, 11.0));
+        propeller.hydro_data().tangential_inflow().iter().for_each(|v| assert_eq!(*v, 0.1));
+    }
+
+    fn build_propeller_nondimensional() {
+        let propeller = PropellerBuilder::new(1.0, 0.25, 1000.0, 200.0, 10.0, 20)
+            .tangential_inflow(vec![0.1; 20])
+            .axial_inflow(vec![11.0; 20])
+            .dimensional(false)
+            .build();
+        propeller.hydro_data().axial_inflow().iter().for_each(|v| assert_eq!(*v, 1.1));
+        propeller.hydro_data().tangential_inflow().iter().for_each(|v| assert_eq!(*v, 0.01));
     }
 }
