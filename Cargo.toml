@@ -11,3 +11,4 @@ members = ["lib/airfoil", "lib/math"]
 math = { path = "lib/math" }
 airfoil = { path = "lib/airfoil" }
 propeller = { path = "lib/propeller" }
+coney = { path = "lib/coney" }

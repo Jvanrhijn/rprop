@@ -6,6 +6,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "coney"
+version = "0.1.0"
+dependencies = [
+ "propeller 0.1.0",
+]
+
+[[package]]
 name = "getset"
 version = "0.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -48,6 +55,7 @@ name = "rprop"
 version = "0.1.0"
 dependencies = [
  "airfoil 0.1.0",
+ "coney 0.1.0",
  "math 0.1.0",
  "propeller 0.1.0",
 ]

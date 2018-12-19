@@ -8,66 +8,61 @@ use airfoil::Airfoil;
 
 #[derive(Clone, Getters, MutGetters)]
 pub struct Propeller {
-    #[get] #[get_mut]
+    #[get = "pub"] #[get_mut = "pub"]
     geometry: Geometry,
-    #[get] #[get_mut]
+    #[get = "pub"] #[get_mut = "pub"]
     specs: DesignSpecs,
-    #[get] #[get_mut]
+    #[get = "pub"] #[get_mut = "pub"]
     hydro_data: HydrodynamicData,
-    #[get] #[get_mut]
+    #[get = "pub"] #[get_mut = "pub"]
     control_points: Vec<f64>,
-    #[get] #[get_mut]
+    #[get = "pub"] #[get_mut = "pub"]
     vortex_points: Vec<f64>,
-    #[get] #[get_mut]
+    #[get = "pub"] #[get_mut = "pub"]
     radial_increment: Vec<f64>,
     dimensional: bool
 }
 
-impl Propeller {
-    fn radial_increment(&self) -> &Vec<f64> {
-        &self.radial_increment
-    }
-}
-
 #[derive(Clone, Getters, MutGetters)]
-struct Geometry {
-    #[get] #[get_mut]
+pub struct Geometry {
+    #[get = "pub"] #[get_mut = "pub"]
     radius: f64,
-    #[get] #[get_mut]
+    #[get = "pub"] #[get_mut = "pub"]
     hub_radius: f64,
-    #[get] #[get_mut]
+    #[get = "pub"] #[get_mut = "pub"]
+    num_blades: usize,
+    #[get = "pub"] #[get_mut = "pub"]
     chords: Vec<f64>,
-    #[get] #[get_mut]
     base_airfoil: Airfoil
 }
 
 #[derive(Clone, Getters, MutGetters)]
-struct DesignSpecs {
-    #[get] #[get_mut]
+pub struct DesignSpecs {
+    #[get = "pub"] #[get_mut = "pub"]
     rot_speed: f64,
-    #[get] #[get_mut]
+    #[get = "pub"] #[get_mut = "pub"]
     ship_speed: f64,
-    #[get] #[get_mut]
+    #[get = "pub"] #[get_mut = "pub"]
     thrust: f64,
-    #[get] #[get_mut]
+    #[get = "pub"] #[get_mut = "pub"]
     num_panels: usize,
 }
 
 #[derive(Clone, Getters, MutGetters)]
-struct HydrodynamicData {
-    #[get] #[get_mut]
+pub struct HydrodynamicData {
+    #[get = "pub"] #[get_mut = "pub"]
     axial_inflow: Vec<f64>,
-    #[get] #[get_mut]
+    #[get = "pub"] #[get_mut = "pub"]
     tangential_inflow: Vec<f64>,
-    #[get] #[get_mut]
+    #[get = "pub"] #[get_mut = "pub"]
     axial_vel_ind: Vec<f64>,
-    #[get] #[get_mut]
+    #[get = "pub"] #[get_mut = "pub"]
     tangential_vel_ind: Vec<f64>,
-    #[get] #[get_mut]
+    #[get = "pub"] #[get_mut = "pub"]
     hydro_pitch: Vec<f64>,
-    #[get] #[get_mut]
+    #[get = "pub"] #[get_mut = "pub"]
     drag_coeffs: Vec<f64>,
-    #[get] #[get_mut]
+    #[get = "pub"] #[get_mut = "pub"]
     circulation: Vec<f64>
 }
 
@@ -83,6 +78,7 @@ pub struct PropellerBuilder {
     // geometric:
     chords: Option<Vec<f64>>,
     airfoil: Option<Airfoil>,
+    num_blades: usize, // default 2
     // hydrodynamic:
     axial_inflow: Option<Vec<f64>>, // default filled with ship_speed
     tangential_inflow: Option<Vec<f64>>, // default zero
@@ -111,11 +107,17 @@ impl PropellerBuilder {
             num_panels,
             chords: None,
             airfoil: None,
+            num_blades: 2,
             axial_inflow: None,
             tangential_inflow: None,
             drag_coeffs: None,
             dim: false
         }
+    }
+
+    pub fn num_blades(mut self, num: usize) -> Self {
+        self.num_blades = num;
+        self
     }
 
     pub fn dimensional(mut self, dim: bool) -> Self {
@@ -133,7 +135,7 @@ impl PropellerBuilder {
         self
     }
 
-    pub fn build(mut self) -> Propeller {
+    pub fn build(self) -> Propeller {
         // TODO: more idiomatic solution for this
         let dim = DimensionScale{
             length: if self.dim {1.0} else {self.radius},
@@ -144,6 +146,7 @@ impl PropellerBuilder {
         let geometry = Geometry{
             radius: self.radius/dim.length,
             hub_radius: self.hub_radius/dim.length,
+            num_blades: self.num_blades,
             chords: self.chords.unwrap_or(vec![0.0; self.num_panels]).into_iter().map(|c| c/dim.length).collect(),
             base_airfoil: self.airfoil.unwrap_or(Airfoil::default()),
         };
@@ -195,6 +198,7 @@ impl PropellerBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
     fn build_propeller_simple() {
         let propeller = PropellerBuilder::new(1.0, 0.25, 1000.0, 200.0, 10.0, 20)
@@ -206,6 +210,7 @@ mod tests {
         propeller.hydro_data().tangential_inflow().iter().for_each(|v| assert_eq!(*v, 0.1));
     }
 
+    #[test]
     fn build_propeller_nondimensional() {
         let propeller = PropellerBuilder::new(1.0, 0.25, 1000.0, 200.0, 10.0, 20)
             .tangential_inflow(vec![0.1; 20])
