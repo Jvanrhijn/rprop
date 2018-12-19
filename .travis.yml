@@ -21,7 +21,7 @@ script:
 addons:
   apt:
     packages:
-      - libgsl0-dev
+      - libgsl0dbl
       - cmake
       - gcc
 
