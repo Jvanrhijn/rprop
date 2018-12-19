@@ -5,4 +5,5 @@ authors = ["Jesse van Rhijn <jesse.v.rhijn@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-airfoil = { path = "../airfoil" }
+getset = "0.0.6"
+airfoil = { path = "../airfoil"}

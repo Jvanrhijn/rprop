@@ -1,13 +1,24 @@
+#[macro_use]
+extern crate getset;
+// std
 use std::vec::Vec;
+// first party
 use airfoil::Airfoil;
+// external
 
-#[derive(Clone)]
+#[derive(Clone, Getters, MutGetters)]
 pub struct Propeller {
+    #[get] #[get_mut]
     geometry: Geometry,
+    #[get] #[get_mut]
     specs: DesignSpecs,
+    #[get] #[get_mut]
     hydro_data: HydrodynamicData,
+    #[get] #[get_mut]
     control_points: Vec<f64>,
+    #[get] #[get_mut]
     vortex_points: Vec<f64>,
+    #[get] #[get_mut]
     radial_increment: Vec<f64>,
     dimensional: bool
 }
@@ -18,30 +29,45 @@ impl Propeller {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Getters, MutGetters)]
 struct Geometry {
+    #[get] #[get_mut]
     radius: f64,
+    #[get] #[get_mut]
     hub_radius: f64,
+    #[get] #[get_mut]
     chords: Vec<f64>,
+    #[get] #[get_mut]
     base_airfoil: Airfoil
 }
 
-#[derive(Clone)]
+#[derive(Clone, Getters, MutGetters)]
 struct DesignSpecs {
+    #[get] #[get_mut]
     rot_speed: f64,
+    #[get] #[get_mut]
     ship_speed: f64,
+    #[get] #[get_mut]
     thrust: f64,
+    #[get] #[get_mut]
     num_panels: usize,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Getters, MutGetters)]
 struct HydrodynamicData {
+    #[get] #[get_mut]
     axial_inflow: Vec<f64>,
+    #[get] #[get_mut]
     tangential_inflow: Vec<f64>,
+    #[get] #[get_mut]
     axial_vel_ind: Vec<f64>,
+    #[get] #[get_mut]
     tangential_vel_ind: Vec<f64>,
+    #[get] #[get_mut]
     hydro_pitch: Vec<f64>,
+    #[get] #[get_mut]
     drag_coeffs: Vec<f64>,
+    #[get] #[get_mut]
     circulation: Vec<f64>
 }
 
