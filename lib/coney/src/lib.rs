@@ -221,6 +221,6 @@ mod tests {
         let prop = PropellerBuilder::new(0.1, 0.025, 150.0, 200.0, 10.0, 20)
             .build();
         let coney_solver = ConeySolverSingle::new(prop).unwrap();
-        let prop = coney_solver.optimize_propulsor(1e-6).unwrap().remove(0);
+        //let prop = coney_solver.optimize_propulsor(1e-6).unwrap().remove(0);
     }
 }
