@@ -31,6 +31,14 @@ impl error::Error for GslError {
     }
 }
 
+fn gsl_vecf64_to_std(vec: &VectorF64) -> Vec<f64> {
+    let mut output = Vec::<f64>::new();
+    for i in 0..vec.len() {
+        output.push(vec.get(i));
+    }
+    output
+}
+
 type Result<T> = std::result::Result<T, GslError>;
 
 /// coney solver trait
@@ -115,26 +123,58 @@ impl ConeySolverSingle {
         Ok(())
     }
 
-    // Perform one Coney iteration, update propeller data (velocities, pitch primarily)
+    // Perform Coney optimization, update propeller data (velocities, pitch)
     // return residuals of this iteration
     fn iteration(&mut self) -> f64 {
         0.0
     }
 
-    // Perform one circulation optimization iteration
+    // Perform circulation optimization
     // return result of optimization
     fn optimize_circulation(&mut self, threshold: f64) -> Result<VectorF64> {
-        let n = self.prop.specs().num_panels();
+        let n = *self.prop.specs().num_panels();
         let mut sol_res = vec![1.0; n+1];
         let mut solution = VectorF64::new(n+1)
             .ok_or(GslError)?;
+        let mut sol_prev= VectorF64::from_slice(&vec![1.0; n+1])
+            .ok_or(GslError)?;
         while sol_res.iter().filter(|&&x| x > threshold).collect::<Vec<_>>().len() > 0 {
             self.fill_matrix();
-            self.fill_vector();
+            self.fill_vector()?;
             linear_algebra::HH_solve(self.matrix.clone().unwrap(), &self.vector, &mut solution);
-            // TODO: compute solution residual, compute new induced velocities, log stuff, set previous solution
+            // TODO: compute new induced velocities, log stuff, set previous solution
+            self.lagrange_mult = solution.get(n);
+            // TODO: consider moving to ndarray for more ergonomic vector/array handling
+            izip!(sol_res.iter_mut(), gsl_vecf64_to_std(&solution).iter(), gsl_vecf64_to_std(&sol_prev).iter())
+                .for_each(|(res, s, sp)| *res = (s - sp).abs());
+            sol_prev.copy_from(&solution);
+            self.update_velocities(&solution);
         }
         Ok(solution)
+    }
+
+    fn update_velocities(&mut self, solution: &VectorF64) {
+        // TODO: implement
+        let rc = self.prop.control_points();
+        let z = *self.prop.geometry().num_blades();
+        let rv = self.prop.vortex_points();
+        let rh = *self.prop.geometry().hub_radius();
+        let pitch = self.prop.hydro_data().hydro_pitch();
+        let w = *self.prop.specs().rot_speed();
+        let va = self.prop.hydro_data().axial_inflow();
+        let vt = self.prop.hydro_data().tangential_inflow();
+        let n = *self.prop.specs().num_panels();
+        let mut axial_velocity = vec![0.0; n];
+        let mut tangential_velocity = vec![0.0; n];
+
+        for i in 0..n {
+            for j in 0..n {
+                axial_velocity[i] += solution.get(j)*flow::axial_velocity(i, j, rc, rv, pitch, rh, z);
+                tangential_velocity[i] += solution.get(j)*flow::tangential_velocity(i, j, rc, rv, pitch, rh, z);
+            }
+        }
+        *self.prop.hydro_data_mut().axial_vel_ind_mut() = axial_velocity;
+        *self.prop.hydro_data_mut().tangential_vel_ind_mut() = tangential_velocity;
     }
 }
 
