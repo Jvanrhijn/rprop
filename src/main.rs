@@ -1,7 +1,15 @@
-use airfoil::Airfoil;
+use coney::{
+    ConeySolver,
+    ConeySolverSingle
+};
+use propeller::{
+    PropellerBuilder,
+};
+
 
 fn main() {
-    let foil = Airfoil::from_file("NACA2414.dat").unwrap();
-    println!("{}", foil.area().unwrap());
-    foil.save_to_file("test.dat").unwrap();
+    let prop = PropellerBuilder::new(1.0, 0.25, 1000.0, 200.0, 10.0, 20)
+        .build();
+    let coney_solver = ConeySolverSingle::new(prop).unwrap();
+    let _prop = coney_solver.optimize_propulsor(1e-6).unwrap().remove(0);
 }

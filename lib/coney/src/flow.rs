@@ -58,9 +58,13 @@ fn axial_velocity_vortex_line(rc: f64, rv: f64, vp: f64, z: usize) -> f64 {
     let y = rc/(rv*tanvp);
     let y0 = 1.0/tanvp;
     if rc <= rv {
-        (z as f64 / (2.0*rv*tanvp) - y*z.pow(2) as f64*coney_f1(y0, y, z)/rc)/(2.0*PI)
+        // this is always 31 for some reason: z as f64 / (2.0*rv*tanvp)/(2.0*PI));
+        let result = (z as f64 / (2.0*rv*tanvp) - y*z.pow(2) as f64*coney_f1(y0, y, z)/rc)/(2.0*PI);
+        result
     } else {
-        (-y*z.pow(2) as f64*y0/rc*coney_f2(y0, y, z)/rc)/(2.0*PI)
+        // this is always 0 for some reason
+        let result = (-y*z.pow(2) as f64*y0/rc*coney_f2(y0, y, z))/(2.0*PI);
+        result
     }
 }
 

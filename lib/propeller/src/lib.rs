@@ -6,7 +6,9 @@ extern crate itertools;
 use std::vec::Vec;
 // first party
 use airfoil::Airfoil;
-// external
+
+const WATER_DENSITY: f64 = 1000.0;
+
 
 #[derive(Clone, Getters, MutGetters)]
 pub struct Propeller {
@@ -148,7 +150,7 @@ impl PropellerBuilder {
             length: if self.dim {1.0} else {self.radius},
             speed: if self.dim {1.0} else {self.ship_speed},
             rotation_speed: if self.dim{1.0} else {self.rot_speed},
-            force: if self.dim {1.0} else {self.thrust}
+            force: if self.dim {1.0} else { WATER_DENSITY*self.radius.powi(2)*self.ship_speed.powi(2)}
         };
         let geometry = Geometry{
             radius: self.radius/dim.length,
@@ -170,9 +172,8 @@ impl PropellerBuilder {
         for i in 1..self.num_panels {
             vortex_points.push(vortex_points[i-1] + dr);
             control_points.push(control_points[i-1] + dr);
-
-            vortex_points.push(self.radius/dim.length - 0.25*dr); // tip inset
         }
+        vortex_points.push(self.radius/dim.length - 0.25*dr); // tip inset
         let radial_increment = vortex_points.iter().zip(vortex_points[1..].iter())
             .map(|(rv, rvp1)| rvp1 - rv).collect::<Vec<_>>();
         let axial_inflow = self.axial_inflow.get_or_insert(vec![self.ship_speed; self.num_panels])
