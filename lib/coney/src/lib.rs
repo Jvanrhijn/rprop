@@ -126,11 +126,15 @@ impl ConeySolverSingle {
     // Perform wake alignment, update propeller data (velocities, pitch)
     fn align_wake(&mut self, threshold: f64) -> Result<Vec<f64>> {
         let n = *self.prop.specs().num_panels();
-        let wake_res = vec![1.0; n];
+        let prev_pitch = self.prop.hydro_data().hydro_pitch().clone();
         let circulation = loop {
             let solution = self.optimize_circulation(threshold)?;
             self.update_pitch();
+            let wake_res = prev_pitch.iter().zip(self.prop.hydro_data().hydro_pitch().iter())
+                .map(|(prev, pitch)| (prev - pitch).abs()).collect::<Vec<_>>();
             // check convergence
+            let total_res: f64 = wake_res.iter().sum();
+            //println!("{}", total_res);
             if wake_res.iter().filter(|&&x| x > threshold).collect::<Vec<_>>().len() == 0 {
                 break solution;
             }
@@ -159,6 +163,7 @@ impl ConeySolverSingle {
                 .for_each(|(res, s, sp)| *res = (s - sp).abs());
             sol_prev.copy_from(&solution);
             self.update_velocities(&solution);
+            println!("{}", self.lagrange_mult);
         }
         Ok(solution)
     }
@@ -188,7 +193,14 @@ impl ConeySolverSingle {
     }
 
     fn update_pitch(&mut self) {
-
+        let rc = self.prop.control_points();
+        let w = self.prop.specs().rot_speed();
+        let va = self.prop.hydro_data().axial_inflow();
+        let vt = self.prop.hydro_data().tangential_inflow();
+        let ua = self.prop.hydro_data().axial_vel_ind();
+        let ut = self.prop.hydro_data().tangential_vel_ind();
+        *self.prop.hydro_data_mut().hydro_pitch_mut() = izip!(rc, va, vt, ua, ut)
+            .map(|(rci, vai, vti, uai, uti)| (vai + uai)/(vti + uti + w*rci)).collect::<Vec<_>>();
     }
 }
 
