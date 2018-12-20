@@ -5,5 +5,7 @@ authors = ["Jesse van Rhijn <jesse.v.rhijn@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+GSL = "1.1.0"
+itertools = "0.8.0"
 propeller = { path = "../propeller" }
 math = { path = "../math" }
