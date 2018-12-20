@@ -73,7 +73,6 @@ impl ConeySolverSingle {
         let dr = self.prop.radial_increment();
         let vt = self.prop.hydro_data().tangential_inflow();
         let va = self.prop.hydro_data().axial_inflow();
-        // TODO: make sure these are initialized properly
         let ut = self.prop.hydro_data().tangential_vel_ind();
         let pitch = self.prop.hydro_data().hydro_pitch();
         for i in 0..n {
@@ -90,15 +89,61 @@ impl ConeySolverSingle {
         }
     }
 
-    fn fill_vector(&mut self) {
+    fn fill_vector(&mut self) -> Result<()> {
+        let cd = self.prop.hydro_data().drag_coeffs();
+        let va = self.prop.hydro_data().axial_inflow();
+        let pitch = self.prop.hydro_data().hydro_pitch();
+        let rc = self.prop.control_points();
+        let dr = self.prop.radial_increment();
+        let z = *self.prop.geometry().num_blades();
+        let thrust = *self.prop.specs().thrust();
+        let w = *self.prop.specs().rot_speed();
+        // velocities
+        let vt = self.prop.hydro_data().tangential_inflow();
+        let va = self.prop.hydro_data().axial_inflow();
+        let ut = self.prop.hydro_data().tangential_vel_ind();
+        let ua = self.prop.hydro_data().axial_vel_ind();
+        let v = izip!(va.iter(), vt.iter(), ua.iter(), ut.iter(), rc.iter())
+            .map(|(vai, vti, uai, uti, rci)| ((vai + uai).powi(2) + (vti + uti + rci*w).powi(2)).sqrt()).collect::<Vec<_>>();
+        // TODO: make sure chords are properly intialized
+        let c = self.prop.geometry().chords();
+        let drag: f64 = izip!(cd.iter(), v.iter(), pitch.iter(), dr.iter(), c.iter())
+            .map(|(cdi, vi, pi, dri, ci)| 0.5*z as f64*cdi*vi*vi*ci*(pi).sin()*dri).sum();
+        let mut vector = izip!(va.iter(), rc.iter(), dr.iter()).map(|(vai, rci, dri)| -vai*rci*dri).collect::<Vec<_>>();
+        vector.push(thrust + drag);
+        self.vector = VectorF64::from_slice(&vector).ok_or(GslError)?;
+        Ok(())
+    }
 
+    // Perform one Coney iteration, update propeller data (velocities, pitch primarily)
+    // return residuals of this iteration
+    fn iteration(&mut self) -> f64 {
+        0.0
+    }
+
+    // Perform one circulation optimization iteration
+    // return residual of this iteration
+    fn optimize_circulation(&mut self) -> f64 {
+        0.0
+    }
+}
+
+impl ConeySolver for ConeySolverSingle {
+    fn optimize_propulsor(mut self, threshold: f64) -> Vec<Propeller> {
+        vec![self.prop]
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use propeller::PropellerBuilder;
+
     #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+    fn optimize_single_prop() {
+        let propeller = PropellerBuilder::new(1.0, 0.25, 1000.0, 200.0, 10.0, 20)
+            .build();
+        let coney_solver = ConeySolverSingle::new(propeller).unwrap();
+        let prop = coney_solver.optimize_propulsor(1e-6).remove(0);
     }
 }
