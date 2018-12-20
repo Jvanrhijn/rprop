@@ -122,9 +122,19 @@ impl ConeySolverSingle {
     }
 
     // Perform one circulation optimization iteration
-    // return residual of this iteration
-    fn optimize_circulation(&mut self) -> f64 {
-        0.0
+    // return result of optimization
+    fn optimize_circulation(&mut self, threshold: f64) -> Result<VectorF64> {
+        let n = self.prop.specs().num_panels();
+        let mut sol_res = vec![1.0; n+1];
+        let mut solution = VectorF64::new(n+1)
+            .ok_or(GslError)?;
+        while sol_res.iter().filter(|&&x| x > threshold).collect::<Vec<_>>().len() > 0 {
+            self.fill_matrix();
+            self.fill_vector();
+            linear_algebra::HH_solve(self.matrix.clone().unwrap(), &self.vector, &mut solution);
+            // TODO: compute solution residual, compute new induced velocities, log stuff, set previous solution
+        }
+        Ok(solution)
     }
 }
 
