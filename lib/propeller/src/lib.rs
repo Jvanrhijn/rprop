@@ -1,5 +1,7 @@
 #[macro_use]
 extern crate getset;
+#[macro_use]
+extern crate itertools;
 // std
 use std::vec::Vec;
 // first party
@@ -105,8 +107,8 @@ impl PropellerBuilder {
             rot_speed,
             ship_speed,
             num_panels,
-            chords: None,
-            airfoil: None,
+            chords: Some(vec![0.0; num_panels]),
+            airfoil: Some(Airfoil::default()),
             num_blades: 2,
             axial_inflow: None,
             tangential_inflow: None,
@@ -135,7 +137,12 @@ impl PropellerBuilder {
         self
     }
 
-    pub fn build(self) -> Propeller {
+    pub fn chords(mut self, chords: Vec<f64>) -> Self {
+        self.chords = Some(chords);
+        self
+    }
+
+    pub fn build(mut self) -> Propeller {
         // TODO: more idiomatic solution for this
         let dim = DimensionScale{
             length: if self.dim {1.0} else {self.radius},
@@ -147,23 +154,8 @@ impl PropellerBuilder {
             radius: self.radius/dim.length,
             hub_radius: self.hub_radius/dim.length,
             num_blades: self.num_blades,
-            chords: self.chords.unwrap_or(vec![0.0; self.num_panels]).into_iter().map(|c| c/dim.length).collect(),
-            base_airfoil: self.airfoil.unwrap_or(Airfoil::default()),
-        };
-        let hydro_data = HydrodynamicData{
-            axial_inflow: self.axial_inflow.unwrap_or(vec![self.ship_speed; self.num_panels])
-                .into_iter().map(|v| v/dim.speed).collect(),
-            tangential_inflow: self.tangential_inflow.unwrap_or(vec![0.0; self.num_panels])
-                .into_iter().map(|v| v/dim.speed).collect(),
-            // TODO: provide good default values for these
-            axial_vel_ind: vec![0.0; self.num_panels]
-                .into_iter().map(|v| v/dim.speed).collect(),
-            tangential_vel_ind: vec![0.0; self.num_panels]
-                .into_iter().map(|v| v/dim.speed).collect(),
-            hydro_pitch: vec![0.0; self.num_panels],
-            drag_coeffs: self.drag_coeffs.unwrap_or(vec![0.0; self.num_panels]),
-            circulation: vec![0.0; self.num_panels]
-                .into_iter().map(|c| c/(dim.length*dim.speed)).collect(),
+            chords: self.chords.take().unwrap().into_iter().map(|c| c/dim.length).collect(),
+            base_airfoil: self.airfoil.take().unwrap()
         };
         let specs = DesignSpecs{
             rot_speed: self.rot_speed/dim.rotation_speed,
@@ -183,6 +175,25 @@ impl PropellerBuilder {
         }
         let radial_increment = vortex_points.iter().zip(vortex_points[1..].iter())
             .map(|(rv, rvp1)| rvp1 - rv).collect::<Vec<_>>();
+        let axial_inflow = self.axial_inflow.get_or_insert(vec![self.ship_speed; self.num_panels])
+            .iter().map(|v| v/dim.speed).collect::<Vec<_>>();
+        let tangential_inflow = self.tangential_inflow.get_or_insert(vec![0.0; self.num_panels])
+            .iter().map(|v| v/dim.speed).collect::<Vec<_>>();
+        let hydro_pitch = izip!(axial_inflow.iter(), tangential_inflow.iter(), control_points.iter())
+            .map(|(va, vt, rc)| (va/(vt + self.rot_speed*rc)).atan()).collect::<Vec<_>>();
+        let hydro_data = HydrodynamicData{
+            axial_inflow,
+            tangential_inflow,
+            // TODO: provide good default values for these
+            axial_vel_ind: vec![0.0; self.num_panels]
+                .into_iter().map(|v| v/dim.speed).collect(),
+            tangential_vel_ind: vec![0.0; self.num_panels]
+                .into_iter().map(|v| v/dim.speed).collect(),
+            hydro_pitch,
+            drag_coeffs: self.drag_coeffs.unwrap_or(vec![0.0; self.num_panels]),
+            circulation: vec![0.0; self.num_panels]
+                .into_iter().map(|c| c/(dim.length*dim.speed)).collect(),
+        };
         Propeller{
             geometry,
             specs,
