@@ -200,7 +200,7 @@ impl ConeySolverSingle {
         let ua = self.prop.hydro_data().axial_vel_ind();
         let ut = self.prop.hydro_data().tangential_vel_ind();
         *self.prop.hydro_data_mut().hydro_pitch_mut() = izip!(rc, va, vt, ua, ut)
-            .map(|(rci, vai, vti, uai, uti)| (vai + uai)/(vti + uti + w*rci)).collect::<Vec<_>>();
+            .map(|(rci, vai, vti, uai, uti)| ((vai + uai)/(vti + uti + w*rci)).atan()).collect::<Vec<_>>();
     }
 }
 
