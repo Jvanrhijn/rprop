@@ -88,10 +88,10 @@ impl ConeySolverSingle {
         for i in 0..n {
             self.matrix.set(i, n, (vt[i] + w*rc[i])*dr[i]);
             for j in 0..n {
-                let uaij = flow::axial_velocity(i, j, rc, rv, pitch, rh, z);
-                let uaji = flow::axial_velocity(j, i, rc, rv, pitch, rh, z);
-                let utij = flow::tangential_velocity(i, j, rc, rv, pitch, rh, z);
-                let utji = flow::tangential_velocity(j, i, rc, rv, pitch, rh, z);
+                let uaij = flow::axial_velocity(i, j, rc, rv, &self.vortex_pitch, rh, z);
+                let uaji = flow::axial_velocity(j, i, rc, rv, &self.vortex_pitch, rh, z);
+                let utij = flow::tangential_velocity(i, j, rc, rv, &self.vortex_pitch, rh, z);
+                let utji = flow::tangential_velocity(j, i, rc, rv, &self.vortex_pitch, rh, z);
                 self.matrix.set(i, j, uaij*rc[i]*dr[i] + uaji*rc[j]*dr[j]
                           + self.lagrange_mult + (utij*dr[i]       + utji*dr[j]));
             }
