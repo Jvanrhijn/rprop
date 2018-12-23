@@ -148,6 +148,8 @@ impl ConeySolverSingle {
     fn optimize_circulation(&mut self, threshold: f64) -> Result<VectorF64> {
         // calculate initial pitch values
         self.update_pitch();
+        println!("{:?}", self.vortex_pitch);
+        println!("{:?}", self.prop.hydro_data().hydro_pitch());
         let n = *self.prop.specs().num_panels();
         let mut sol_res = vec![1.0; n+1];
         let mut solution = VectorF64::new(n+1)
@@ -165,7 +167,6 @@ impl ConeySolverSingle {
             izip!(sol_res.iter_mut(), gsl_vecf64_to_std(&solution).iter(), gsl_vecf64_to_std(&sol_prev).iter())
                 .for_each(|(res, s, sp)| *res = (s - sp).abs());
             sol_prev.copy_from(&solution);
-            println!("{}", self.lagrange_mult);
             self.update_velocities(&solution);
         }
         Ok(solution)
@@ -211,15 +212,14 @@ impl ConeySolverSingle {
         let n = *self.prop.specs().num_panels();
         let hpitch = self.prop.hydro_data().hydro_pitch();
         let rv = self.prop.vortex_points();
-        println!("{} {}", self.vortex_pitch.len(), rv.len());
-        // TODO: interpolate to find pitch at vortex points
+        // interpolate to find pitch at vortex points
         for i in 0..n-1 {
             let slope = (hpitch[i+1] - hpitch[i])/(rc[i+1] - rc[i]);
             self.vortex_pitch[i+1] = hpitch[i] + slope*(rv[i+1] - rc[i]);
         }
         // extrapolate first and last vortex points
         let slope = (hpitch[1] - hpitch[0])/(rc[1] - rc[0]);
-        self.vortex_pitch[0] = hpitch[1] + slope*(rv[0] - rc[0]);
+        self.vortex_pitch[0] = hpitch[0] + slope*(rv[0] - rc[0]);
         let slope = (hpitch[n-1] - hpitch[n-2])/(rc[n-1] - rc[n-2]);
         self.vortex_pitch[n] = hpitch[n-1] + slope*(rv[n] - rc[n-1]);
     }
