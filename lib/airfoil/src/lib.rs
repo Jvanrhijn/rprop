@@ -7,7 +7,7 @@ use std::{
 // first party
 use math;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Airfoil {
     x_values: Vec<f64>,
     y_values: Vec<f64>

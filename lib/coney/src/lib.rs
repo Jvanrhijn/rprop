@@ -62,6 +62,7 @@ pub struct ConeySolverSingle {
 
 impl ConeySolverSingle {
     pub fn new(prop: Propeller) -> Result<Self> {
+        println!("{:?}", prop);
         let n = *prop.specs().num_panels();
         let matrix = MatrixF64::new(n+1, n+1)
             .ok_or(GslError)?;
@@ -160,10 +161,10 @@ impl ConeySolverSingle {
             linear_algebra::HH_solve(self.matrix.clone().unwrap(), &self.vector, &mut solution);
             // TODO: log stuff
             self.lagrange_mult = solution.get(n);
+            println!("{}", self.lagrange_mult);
             // TODO: consider moving to ndarray for more ergonomic vector/array handling
             izip!(sol_res.iter_mut(), gsl_vecf64_to_std(&solution).iter(), gsl_vecf64_to_std(&sol_prev).iter())
                 .for_each(|(res, s, sp)| *res = (s - sp).abs());
-            println!("{}", self.lagrange_mult);
             sol_prev.copy_from(&solution);
             self.update_velocities(&solution);
         }
@@ -189,7 +190,6 @@ impl ConeySolverSingle {
                 tangential_velocity[i] += solution.get(j)*flow::tangential_velocity(i, j, rc, rv, &self.vortex_pitch, rh, z);
             }
         }
-
         *self.prop.hydro_data_mut().axial_vel_ind_mut() = axial_velocity;
         *self.prop.hydro_data_mut().tangential_vel_ind_mut() = tangential_velocity;
     }

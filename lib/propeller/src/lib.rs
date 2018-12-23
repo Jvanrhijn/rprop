@@ -10,7 +10,7 @@ use airfoil::Airfoil;
 const WATER_DENSITY: f64 = 1000.0;
 
 
-#[derive(Clone, Getters, MutGetters)]
+#[derive(Debug, Clone, Getters, MutGetters)]
 pub struct Propeller {
     #[get = "pub"] #[get_mut = "pub"]
     geometry: Geometry,
@@ -27,7 +27,7 @@ pub struct Propeller {
     dimensional: bool
 }
 
-#[derive(Clone, Getters, MutGetters)]
+#[derive(Debug, Clone, Getters, MutGetters)]
 pub struct Geometry {
     #[get = "pub"] #[get_mut = "pub"]
     radius: f64,
@@ -40,7 +40,7 @@ pub struct Geometry {
     base_airfoil: Airfoil
 }
 
-#[derive(Clone, Getters, MutGetters)]
+#[derive(Debug, Clone, Getters, MutGetters)]
 pub struct DesignSpecs {
     #[get = "pub"] #[get_mut = "pub"]
     rot_speed: f64,
@@ -52,7 +52,7 @@ pub struct DesignSpecs {
     num_panels: usize,
 }
 
-#[derive(Clone, Getters, MutGetters)]
+#[derive(Debug, Clone, Getters, MutGetters)]
 pub struct HydrodynamicData {
     #[get = "pub"] #[get_mut = "pub"]
     axial_inflow: Vec<f64>,
@@ -181,7 +181,7 @@ impl PropellerBuilder {
         let tangential_inflow = self.tangential_inflow.get_or_insert(vec![0.0; self.num_panels])
             .iter().map(|v| v/dim.speed).collect::<Vec<_>>();
         let hydro_pitch = izip!(axial_inflow.iter(), tangential_inflow.iter(), control_points.iter())
-            .map(|(va, vt, rc)| (va/(vt + self.rot_speed*rc)).atan()).collect::<Vec<_>>();
+            .map(|(va, vt, rc)| (va/(vt + self.rot_speed/dim.rotation_speed*rc)).atan()).collect::<Vec<_>>();
         let hydro_data = HydrodynamicData{
             axial_inflow,
             tangential_inflow,
