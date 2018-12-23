@@ -149,7 +149,7 @@ impl PropellerBuilder {
         let dim = DimensionScale{
             length: if self.dim {1.0} else {self.radius},
             speed: if self.dim {1.0} else {self.ship_speed},
-            rotation_speed: if self.dim{1.0} else {self.rot_speed},
+            rotation_speed: if self.dim{1.0} else {self.ship_speed/self.radius},
             force: if self.dim {1.0} else { WATER_DENSITY*self.radius.powi(2)*self.ship_speed.powi(2)}
         };
         let geometry = Geometry{
