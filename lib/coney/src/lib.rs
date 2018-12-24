@@ -1,5 +1,13 @@
 #[macro_use]
 extern crate itertools;
+extern crate ndarray;
+use ndarray::{
+    Array1,
+    Array2,
+};
+use ndarray_linalg::{
+    Solve
+};
 use std::{error, fmt, vec::Vec};
 extern crate rgsl;
 use rgsl::{
@@ -54,8 +62,8 @@ pub trait ConeySolver {
 
 pub struct ConeySolverSingle {
     prop: Propeller,
-    matrix: MatrixF64,
-    vector: VectorF64,
+    matrix: Array2<f64>,
+    vector: Array1<f64>,
     lagrange_mult: f64,
     vortex_pitch: Vec<f64>
 }
@@ -63,12 +71,9 @@ pub struct ConeySolverSingle {
 impl ConeySolverSingle {
 
     pub fn new(prop: Propeller) -> Result<Self> {
-        println!("{:?}", prop);
         let n = *prop.specs().num_panels();
-        let matrix = MatrixF64::new(n+1, n+1)
-            .ok_or(GslError)?;
-        let vector = VectorF64::new(n+1)
-            .ok_or(GslError)?;
+        let matrix = Array2::<f64>::zeros((n+1, n+1));
+        let vector = Array1::<f64>::zeros(n+1);
         Ok(Self{prop, matrix, vector, lagrange_mult: -1.0, vortex_pitch: vec![0.0; n+1]})
     }
 
@@ -87,16 +92,16 @@ impl ConeySolverSingle {
         let ut = self.prop.hydro_data().tangential_vel_ind();
 
         for i in 0..n {
-            self.matrix.set(i, n, (vt[i] + w*rc[i])*dr[i]);
+            self.matrix[[i, n]] = (vt[i] + w*rc[i])*dr[i];
             for j in 0..n {
                 let uaij = flow::axial_velocity(i, j, rc, rv, &self.vortex_pitch, rh, z);
                 let uaji = flow::axial_velocity(j, i, rc, rv, &self.vortex_pitch, rh, z);
                 let utij = flow::tangential_velocity(i, j, rc, rv, &self.vortex_pitch, rh, z);
                 let utji = flow::tangential_velocity(j, i, rc, rv, &self.vortex_pitch, rh, z);
-                self.matrix.set(i, j, uaij*rc[i]*dr[i] + uaji*rc[j]*dr[j]
-                          + self.lagrange_mult + (utij*dr[i]       + utji*dr[j]));
+                self.matrix[[i, j]] = uaij*rc[i]*dr[i] + uaji*rc[j]*dr[j]
+                          + self.lagrange_mult + (utij*dr[i]       + utji*dr[j]);
             }
-            self.matrix.set(n, i, z as f64*(vt[i] + w*rc[i] + ut[i])*dr[i]);
+            self.matrix[[n, i]] =  z as f64*(vt[i] + w*rc[i] + ut[i])*dr[i];
         }
 
     }
@@ -115,25 +120,28 @@ impl ConeySolverSingle {
         let va = self.prop.hydro_data().axial_inflow();
         let ut = self.prop.hydro_data().tangential_vel_ind();
         let ua = self.prop.hydro_data().axial_vel_ind();
+        // TODO: make sure chords are properly intialized
+        let c = self.prop.geometry().chords();
 
         let v = izip!(va.iter(), vt.iter(), ua.iter(), ut.iter(), rc.iter())
             .map(|(vai, vti, uai, uti, rci)| ((vai + uai).powi(2) + (vti + uti + rci*w).powi(2)).sqrt())
             .collect::<Vec<_>>();
-        // TODO: make sure chords are properly intialized
 
-        let c = self.prop.geometry().chords();
         let drag: f64 = izip!(cd.iter(), v.iter(), pitch.iter(), dr.iter(), c.iter())
             .map(|(cdi, vi, pi, dri, ci)| 0.5*z as f64*cdi*vi*vi*ci*(pi).sin()*dri).sum();
 
         let mut vector = izip!(va.iter(), rc.iter(), dr.iter()).map(|(vai, rci, dri)| -vai*rci*dri).collect::<Vec<_>>();
         vector.push(thrust + drag);
-        self.vector = VectorF64::from_slice(&vector).ok_or(GslError)?;
+        self.vector = Array1::<f64>::from_vec(vector);
 
         Ok(())
     }
 
     // Perform wake alignment, update propeller data (velocities, pitch)
     fn align_wake(&mut self, threshold: f64) -> Result<Vec<f64>> {
+        // calculate initial pitch values
+        self.update_pitch();
+
         let prev_pitch = self.prop.hydro_data().hydro_pitch().clone();
 
         let circulation = loop {
@@ -149,48 +157,39 @@ impl ConeySolverSingle {
             }
         };
 
-        Ok(gsl_vecf64_to_std(&circulation))
+        Ok(circulation.to_vec())
     }
 
     // Perform circulation optimization
     // return result of optimization
-    fn optimize_circulation(&mut self, threshold: f64) -> Result<VectorF64> {
-
-        // calculate initial pitch values
-        self.update_pitch();
+    fn optimize_circulation(&mut self, threshold: f64) -> Result<Array1<f64>> {
         let n = *self.prop.specs().num_panels();
         let mut sol_res = vec![1.0; n+1];
-        let mut solution = VectorF64::new(n+1)
-            .ok_or(GslError)?;
-        let mut sol_prev= VectorF64::from_slice(&vec![1.0; n+1])
-            .ok_or(GslError)?;
+        let mut sol_prev= Array1::<f64>::ones(n+1);
 
-        while sol_res.iter().filter(|&&x| x > threshold).collect::<Vec<_>>().len() > 0 {
+        loop {
             self.fill_matrix();
             self.fill_vector()?;
 
-            match linear_algebra::HH_solve(self.matrix.clone().unwrap(), &self.vector, &mut solution) {
-                rgsl::Value::Success => Ok(()),
-                _                    => Err(GslError)
-            }?;
-
-            // TODO: log stuff
-            self.lagrange_mult = solution.get(n);
-            //println!("{}", self.lagrange_mult);
+            let solution = self.matrix.solve(&self.vector)
+                .unwrap();
 
             // TODO: consider moving to ndarray for more ergonomic vector/array handling
-            izip!(sol_res.iter_mut(), gsl_vecf64_to_std(&solution).iter(), gsl_vecf64_to_std(&sol_prev).iter())
-                .for_each(|(res, s, sp)| *res = (s - sp).abs());
-
-            sol_prev.copy_from(&solution);
+            let sol_res = (&solution - &sol_prev).to_vec().into_iter().filter(|res| res.abs() > threshold)
+                .collect::<Vec<_>>();
+            if sol_res.len() == 0 {
+                break Ok(solution)
+            }
             self.update_velocities(&solution);
-        }
 
-        Ok(solution)
+            // TODO: log stuff
+            self.lagrange_mult = solution[n];
+            //println!("{}", self.lagrange_mult);
+        }
 
     }
 
-    fn update_velocities(&mut self, solution: &VectorF64) {
+    fn update_velocities(&mut self, solution: &Array1<f64>) {
 
         // TODO: implement
         let rc = self.prop.control_points();
@@ -198,13 +197,14 @@ impl ConeySolverSingle {
         let rv = self.prop.vortex_points();
         let rh = *self.prop.geometry().hub_radius();
         let n = *self.prop.specs().num_panels();
+
         let mut axial_velocity = vec![0.0; n];
         let mut tangential_velocity = vec![0.0; n];
 
         for i in 0..n {
             for j in 0..n {
-                axial_velocity[i] += solution.get(j)*flow::axial_velocity(i, j, rc, rv, &self.vortex_pitch, rh, z);
-                tangential_velocity[i] += solution.get(j)*flow::tangential_velocity(i, j, rc, rv, &self.vortex_pitch, rh, z);
+                axial_velocity[i] += solution[j]*flow::axial_velocity(i, j, rc, rv, &self.vortex_pitch, rh, z);
+                tangential_velocity[i] += solution[j]*flow::tangential_velocity(i, j, rc, rv, &self.vortex_pitch, rh, z);
             }
         }
 
