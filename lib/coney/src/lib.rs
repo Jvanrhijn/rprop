@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate itertools;
+#[macro_use]
 extern crate ndarray;
 use ndarray::{
     Array1,
@@ -36,7 +37,6 @@ pub struct ConeySolverSingle {
 impl ConeySolverSingle {
 
     pub fn new(prop: Propeller) -> Self {
-        println!("{:?}", prop);
         let n = *prop.specs().num_panels();
         let matrix = Array2::<f64>::zeros((n+1, n+1));
         let vector = Array1::<f64>::zeros(n+1);
@@ -65,7 +65,7 @@ impl ConeySolverSingle {
                 let utij = flow::tangential_velocity(i, j, rc, rv, &self.vortex_pitch, rh, z);
                 let utji = flow::tangential_velocity(j, i, rc, rv, &self.vortex_pitch, rh, z);
                 self.matrix[[i, j]] = uaij*rc[i]*dr[i] + uaji*rc[j]*dr[j]
-                          + self.lagrange_mult * (utij*dr[i]       + utji*dr[j]);
+                          + self.lagrange_mult*(utij*dr[i] + utji*dr[j]);
             }
             self.matrix[[n, i]] =  z as f64*(vt[i] + w*rc[i] + ut[i])*dr[i];
         }
@@ -107,22 +107,21 @@ impl ConeySolverSingle {
         // calculate initial pitch values
         self.update_pitch();
 
-        let prev_pitch = self.prop.hydro_data().hydro_pitch().clone();
 
         let circulation = loop {
             let solution = self.optimize_circulation(threshold)?;
+            let prev_pitch = self.prop.hydro_data().hydro_pitch().clone();
             self.update_pitch();
             let wake_res = prev_pitch.iter().zip(self.prop.hydro_data().hydro_pitch().iter())
                 .map(|(prev, pitch)| (prev - pitch).abs()).collect::<Vec<_>>();
 
             // check convergence
-            //println!("{}", wake_res.iter().sum::<f64>());
             if wake_res.iter().filter(|&&x| x > threshold).collect::<Vec<_>>().len() == 0 {
                 break solution;
             }
         };
 
-        Ok(circulation.to_vec())
+        Ok(circulation.slice(s![..circulation.len()-1]).to_vec())
     }
 
     // Perform circulation optimization
@@ -149,7 +148,7 @@ impl ConeySolverSingle {
 
             // TODO: log stuff
             self.lagrange_mult = solution[n];
-            println!("{}", self.lagrange_mult);
+            //println!("{}", self.lagrange_mult);
         }
 
     }
@@ -227,6 +226,10 @@ mod tests {
         let prop = PropellerBuilder::new(0.1, 0.025, 150.0, 200.0, 10.0, 20)
             .build();
         let coney_solver = ConeySolverSingle::new(prop);
-        //let prop = coney_solver.optimize_propulsor(1e-6).unwrap().remove(0);
+        let prop = coney_solver.optimize_propulsor(1e-6).unwrap().remove(0);
+        for &g in prop.hydro_data().circulation() {
+            assert!(g > 0.0);
+        }
+
     }
 }
