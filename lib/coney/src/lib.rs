@@ -8,46 +8,11 @@ use ndarray::{
 use ndarray_linalg::{
     Solve
 };
-use std::{error, fmt, vec::Vec};
-extern crate rgsl;
-use rgsl::{
-    types::{
-        matrix::MatrixF64,
-        vector::VectorF64
-    },
-    linear_algebra
-};
+use std::vec::Vec;
 use propeller::Propeller;
 mod flow;
 
-#[derive(Copy, Clone, Debug)]
-pub struct GslError;
-
-impl fmt::Display for GslError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Error in GSL library")
-    }
-}
-
-impl error::Error for GslError {
-    fn description(&self) -> &str {
-        "Error in GSL library"
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        None
-    }
-}
-
-fn gsl_vecf64_to_std(vec: &VectorF64) -> Vec<f64> {
-    let mut output = Vec::<f64>::new();
-    for i in 0..vec.len() {
-        output.push(vec.get(i));
-    }
-    output
-}
-
-type Result<T> = std::result::Result<T, GslError>;
+type Result<T> = std::result::Result<T, ndarray_linalg::error::LinalgError>;
 
 /// coney solver trait
 /// defines methods that must be implemented for all coney solver structs
@@ -70,11 +35,11 @@ pub struct ConeySolverSingle {
 
 impl ConeySolverSingle {
 
-    pub fn new(prop: Propeller) -> Result<Self> {
+    pub fn new(prop: Propeller) -> Self {
         let n = *prop.specs().num_panels();
         let matrix = Array2::<f64>::zeros((n+1, n+1));
         let vector = Array1::<f64>::zeros(n+1);
-        Ok(Self{prop, matrix, vector, lagrange_mult: -1.0, vortex_pitch: vec![0.0; n+1]})
+        Self{prop, matrix, vector, lagrange_mult: -1.0, vortex_pitch: vec![0.0; n+1]}
     }
 
     fn fill_matrix(&mut self) {
@@ -164,27 +129,28 @@ impl ConeySolverSingle {
     // return result of optimization
     fn optimize_circulation(&mut self, threshold: f64) -> Result<Array1<f64>> {
         let n = *self.prop.specs().num_panels();
-        let mut sol_res = vec![1.0; n+1];
         let mut sol_prev= Array1::<f64>::ones(n+1);
 
         loop {
             self.fill_matrix();
             self.fill_vector()?;
 
-            let solution = self.matrix.solve(&self.vector)
-                .unwrap();
+            let solution = self.matrix.solve(&self.vector)?;
 
             // TODO: consider moving to ndarray for more ergonomic vector/array handling
             let sol_res = (&solution - &sol_prev).to_vec().into_iter().filter(|res| res.abs() > threshold)
                 .collect::<Vec<_>>();
+
             if sol_res.len() == 0 {
                 break Ok(solution)
             }
+            sol_prev = solution.clone();
+
             self.update_velocities(&solution);
 
             // TODO: log stuff
             self.lagrange_mult = solution[n];
-            //println!("{}", self.lagrange_mult);
+            println!("{}", self.lagrange_mult);
         }
 
     }
@@ -262,7 +228,7 @@ mod tests {
     fn optimize_single_prop() {
         let prop = PropellerBuilder::new(0.1, 0.025, 150.0, 200.0, 10.0, 20)
             .build();
-        let coney_solver = ConeySolverSingle::new(prop).unwrap();
+        let coney_solver = ConeySolverSingle::new(prop);
         //let prop = coney_solver.optimize_propulsor(1e-6).unwrap().remove(0);
     }
 }
