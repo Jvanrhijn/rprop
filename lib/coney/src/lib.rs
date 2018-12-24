@@ -71,7 +71,7 @@ impl ConeySolverSingle {
 
     }
 
-    fn fill_vector(&mut self) -> Result<()> {
+    fn fill_vector(&mut self) {
         let cd = self.prop.hydro_data().drag_coeffs();
         let pitch = self.prop.hydro_data().hydro_pitch();
         let rc = self.prop.control_points();
@@ -85,21 +85,20 @@ impl ConeySolverSingle {
         let va = self.prop.hydro_data().axial_inflow();
         let ut = self.prop.hydro_data().tangential_vel_ind();
         let ua = self.prop.hydro_data().axial_vel_ind();
-        // TODO: make sure chords are properly intialized
+
+        // TODO: initialize chords properly
         let c = self.prop.geometry().chords();
 
-        let v = izip!(va.iter(), vt.iter(), ua.iter(), ut.iter(), rc.iter())
+        let v = izip!(va, vt, ua, ut, rc)
             .map(|(vai, vti, uai, uti, rci)| ((vai + uai).powi(2) + (vti + uti + rci*w).powi(2)).sqrt())
             .collect::<Vec<_>>();
 
-        let drag: f64 = izip!(cd.iter(), v.iter(), pitch.iter(), dr.iter(), c.iter())
+        let drag: f64 = izip!(cd, v, pitch, dr, c)
             .map(|(cdi, vi, pi, dri, ci)| 0.5*z as f64*cdi*vi*vi*ci*(pi).sin()*dri).sum();
 
-        let mut vector = izip!(va.iter(), rc.iter(), dr.iter()).map(|(vai, rci, dri)| -vai*rci*dri).collect::<Vec<_>>();
+        let mut vector = izip!(va, rc, dr).map(|(vai, rci, dri)| -vai*rci*dri).collect::<Vec<_>>();
         vector.push(thrust + drag);
         self.vector = Array1::<f64>::from_vec(vector);
-
-        Ok(())
     }
 
     // Perform wake alignment, update propeller data (velocities, pitch)
@@ -133,7 +132,7 @@ impl ConeySolverSingle {
 
         loop {
             self.fill_matrix();
-            self.fill_vector()?;
+            self.fill_vector();
 
             let solution = self.matrix.solve(&self.vector)?;
 
