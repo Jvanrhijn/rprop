@@ -36,6 +36,7 @@ pub struct ConeySolverSingle {
 impl ConeySolverSingle {
 
     pub fn new(prop: Propeller) -> Self {
+        println!("{:?}", prop);
         let n = *prop.specs().num_panels();
         let matrix = Array2::<f64>::zeros((n+1, n+1));
         let vector = Array1::<f64>::zeros(n+1);
@@ -64,7 +65,7 @@ impl ConeySolverSingle {
                 let utij = flow::tangential_velocity(i, j, rc, rv, &self.vortex_pitch, rh, z);
                 let utji = flow::tangential_velocity(j, i, rc, rv, &self.vortex_pitch, rh, z);
                 self.matrix[[i, j]] = uaij*rc[i]*dr[i] + uaji*rc[j]*dr[j]
-                          + self.lagrange_mult + (utij*dr[i]       + utji*dr[j]);
+                          + self.lagrange_mult * (utij*dr[i]       + utji*dr[j]);
             }
             self.matrix[[n, i]] =  z as f64*(vt[i] + w*rc[i] + ut[i])*dr[i];
         }
@@ -136,7 +137,6 @@ impl ConeySolverSingle {
 
             let solution = self.matrix.solve(&self.vector)?;
 
-            // TODO: consider moving to ndarray for more ergonomic vector/array handling
             let sol_res = (&solution - &sol_prev).to_vec().into_iter().filter(|res| res.abs() > threshold)
                 .collect::<Vec<_>>();
 
@@ -156,7 +156,6 @@ impl ConeySolverSingle {
 
     fn update_velocities(&mut self, solution: &Array1<f64>) {
 
-        // TODO: implement
         let rc = self.prop.control_points();
         let z = *self.prop.geometry().num_blades();
         let rv = self.prop.vortex_points();
@@ -180,7 +179,7 @@ impl ConeySolverSingle {
     fn update_pitch(&mut self) {
         {
             let rc = self.prop.control_points();
-            let w = self.prop.specs().rot_speed();
+            let w = *self.prop.specs().rot_speed();
             let va = self.prop.hydro_data().axial_inflow();
             let vt = self.prop.hydro_data().tangential_inflow();
             let ua = self.prop.hydro_data().axial_vel_ind(); // this is fucked somehow
@@ -212,7 +211,7 @@ impl ConeySolverSingle {
 
 impl ConeySolver for ConeySolverSingle {
     fn optimize_propulsor(mut self, threshold: f64) -> Result<Vec<Propeller>> {
-        // TODO: have align_wake return convergence error if not converged, GslError if GSL failed
+        // TODO: have align_wake return convergence error if not converged, LinalgError if ndarray failed
         *self.prop.hydro_data_mut().circulation_mut() = self.align_wake(threshold)?;
         Ok(vec![self.prop])
     }

@@ -20,8 +20,8 @@ fn coney_f2(y0: f64, y: f64, z: usize) -> f64 {
     let prefactor = 1.0/(2.0*(z as f64)*y0)*((1.0 + y0.powi(2))/(1.0 + y.powi(2))).powf(0.25);
     let u = coney_u(y0, y, z);
     let ufrac = 1.0/(u - 1.0);
-    let first_frac = (9.0*y0*y0 + 2.0)/(1.0 + y0*y0).powf(1.5);
-    let second_frac = (3.0*y*y - 2.0)/(1.0 + y*y).powf(1.5);
+    let first_frac = (9.0*y0*y0 + 2.0)/((1.0 + y0*y0).powf(1.5));
+    let second_frac = (3.0*y*y - 2.0)/((1.0 + y*y).powf(1.5));
     prefactor*(ufrac - 1.0/(24.0*(z as f64))*(first_frac + second_frac)*(1.0 + ufrac).ln())
 }
 
@@ -85,7 +85,6 @@ fn tangential_velocity_vortex_line(rc: f64, rv: f64, vp: f64, z: usize) -> f64 {
 /// a propeller of z blades
 pub fn axial_velocity(ci: usize, vi: usize, rc: &[f64], rv: &[f64], vpitch: &[f64], rh: f64, z: usize) -> f64 {
     // vortex line contributions
-    //println!("{}", (vpitch[vi].tan()*rc[vi]));
     let uaw1 = axial_velocity_vortex_line(rc[ci], rv[vi+1], (vpitch[vi].tan()*rc[vi]/rv[vi+1]).atan(), z);
     let uaw2 = axial_velocity_vortex_line(rc[ci], rv[vi], (vpitch[vi].tan()*rc[vi]/rv[vi]).atan(), z);
     // image hub contributions
