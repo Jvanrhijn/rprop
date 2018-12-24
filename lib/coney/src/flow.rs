@@ -58,13 +58,9 @@ fn axial_velocity_vortex_line(rc: f64, rv: f64, vp: f64, z: usize) -> f64 {
     let y = rc/(rv*tanvp);
     let y0 = 1.0/tanvp;
     if rc <= rv {
-        // this is always 31 for some reason: z as f64 / (2.0*rv*tanvp)/(2.0*PI));
-        let result = (z as f64 / (2.0*rv*tanvp) - y*z.pow(2) as f64*y0*coney_f1(y0, y, z)/rc)/(2.0*PI);
-        result
+        (z as f64 / (2.0*rv*tanvp) - y*z.pow(2) as f64*y0*coney_f1(y0, y, z)/rc)/(2.0*PI)
     } else {
-        // this is always 0 for some reason
-        let result = (-y*z.pow(2) as f64*y0/rc*coney_f2(y0, y, z))/(2.0*PI);
-        result
+        (-y*z.pow(2) as f64*y0/rc*coney_f2(y0, y, z))/(2.0*PI)
     }
 }
 
@@ -75,11 +71,9 @@ fn tangential_velocity_vortex_line(rc: f64, rv: f64, vp: f64, z: usize) -> f64 {
     let y = rc/(rv*tanvp);
     let y0 = 1.0/tanvp;
     if rc <= rv {
-        let result = (z.pow(2) as f64/rc*y0*coney_f1(y0, y, z))/(2.0*PI);
-        result
+        (z.pow(2) as f64/rc*y0*coney_f1(y0, y, z))/(2.0*PI)
     } else {
-        let result = (z as f64/(2.0*rc) + z.pow(2) as f64*y0*coney_f2(y0, y, z)/rc)/(2.0*PI);
-        result
+        (z as f64/(2.0*rc) + z.pow(2) as f64*y0*coney_f2(y0, y, z)/rc)/(2.0*PI)
     }
 }
 
@@ -96,7 +90,7 @@ pub fn axial_velocity(ci: usize, vi: usize, rc: &[f64], rv: &[f64], vpitch: &[f6
     let uawh1 = axial_velocity_vortex_line(rc[ci], rh*rh/rv[vi+1], (vpitch[vi].tan()*rc[vi]/(rh*rh/rv[vi+1])).atan(), z);
     let uawh2 = axial_velocity_vortex_line(rc[ci], rh*rh/rv[vi], (vpitch[vi].tan()*rc[vi]/(rh*rh/rv[vi])).atan(), z);
     // horsehoe vortex + image hub vortex
-    (uaw1 - uawh2) - (uaw2 - uawh2)
+    (uaw1 - uawh1) - (uaw2 - uawh2)
 }
 
 /// Total axial velocity induced by horseshoe vortex at
@@ -111,5 +105,5 @@ pub fn tangential_velocity(ci: usize, vi: usize, rc: &[f64], rv: &[f64], vpitch:
     let utwh1 = tangential_velocity_vortex_line(rc[ci], rh*rh/rv[vi+1], (vpitch[vi].tan()*rc[vi]/(rh*rh/rv[vi+1])).atan(), z);
     let utwh2 = tangential_velocity_vortex_line(rc[ci], rh*rh/rv[vi], (vpitch[vi].tan()*rc[vi]/(rh*rh/rv[vi])).atan(), z);
     // horsehoe vortex + image hub vortex
-    (utw1 - utwh2) - (utw2 - utwh2)
+    (utw1 - utwh1) - (utw2 - utwh2)
 }

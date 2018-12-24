@@ -174,14 +174,19 @@ impl PropellerBuilder {
             control_points.push(control_points[i-1] + dr);
         }
         vortex_points.push(self.radius/dim.length - 0.25*dr); // tip inset
+
         let radial_increment = vortex_points.iter().zip(vortex_points[1..].iter())
             .map(|(rv, rvp1)| rvp1 - rv).collect::<Vec<_>>();
+
         let axial_inflow = self.axial_inflow.get_or_insert(vec![self.ship_speed; self.num_panels])
             .iter().map(|v| v/dim.speed).collect::<Vec<_>>();
+
         let tangential_inflow = self.tangential_inflow.get_or_insert(vec![0.0; self.num_panels])
             .iter().map(|v| v/dim.speed).collect::<Vec<_>>();
+
         let hydro_pitch = izip!(axial_inflow.iter(), tangential_inflow.iter(), control_points.iter())
             .map(|(va, vt, rc)| (va/(vt + self.rot_speed/dim.rotation_speed*rc)).atan()).collect::<Vec<_>>();
+
         let hydro_data = HydrodynamicData{
             axial_inflow,
             tangential_inflow,

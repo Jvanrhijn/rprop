@@ -61,6 +61,7 @@ pub struct ConeySolverSingle {
 }
 
 impl ConeySolverSingle {
+
     pub fn new(prop: Propeller) -> Result<Self> {
         println!("{:?}", prop);
         let n = *prop.specs().num_panels();
@@ -77,6 +78,7 @@ impl ConeySolverSingle {
         let w = *self.prop.specs().rot_speed();
         let n = *self.prop.specs().num_panels();
         let rh = *self.prop.geometry().hub_radius();
+
         // per-panel data
         let rc = self.prop.control_points();
         let rv = self.prop.vortex_points();
@@ -85,6 +87,7 @@ impl ConeySolverSingle {
         let va = self.prop.hydro_data().axial_inflow();
         let ut = self.prop.hydro_data().tangential_vel_ind();
         let pitch = self.prop.hydro_data().hydro_pitch();
+
         for i in 0..n {
             self.matrix.set(i, n, (vt[i] + w*rc[i])*dr[i]);
             for j in 0..n {
@@ -97,6 +100,7 @@ impl ConeySolverSingle {
             }
             self.matrix.set(n, i, z as f64*(vt[i] + w*rc[i] + ut[i])*dr[i]);
         }
+
     }
 
     fn fill_vector(&mut self) -> Result<()> {
@@ -108,20 +112,26 @@ impl ConeySolverSingle {
         let z = *self.prop.geometry().num_blades();
         let thrust = *self.prop.specs().thrust();
         let w = *self.prop.specs().rot_speed();
+
         // velocities
         let vt = self.prop.hydro_data().tangential_inflow();
         let va = self.prop.hydro_data().axial_inflow();
         let ut = self.prop.hydro_data().tangential_vel_ind();
         let ua = self.prop.hydro_data().axial_vel_ind();
+
         let v = izip!(va.iter(), vt.iter(), ua.iter(), ut.iter(), rc.iter())
-            .map(|(vai, vti, uai, uti, rci)| ((vai + uai).powi(2) + (vti + uti + rci*w).powi(2)).sqrt()).collect::<Vec<_>>();
+            .map(|(vai, vti, uai, uti, rci)| ((vai + uai).powi(2) + (vti + uti + rci*w).powi(2)).sqrt())
+            .collect::<Vec<_>>();
         // TODO: make sure chords are properly intialized
+
         let c = self.prop.geometry().chords();
         let drag: f64 = izip!(cd.iter(), v.iter(), pitch.iter(), dr.iter(), c.iter())
             .map(|(cdi, vi, pi, dri, ci)| 0.5*z as f64*cdi*vi*vi*ci*(pi).sin()*dri).sum();
+
         let mut vector = izip!(va.iter(), rc.iter(), dr.iter()).map(|(vai, rci, dri)| -vai*rci*dri).collect::<Vec<_>>();
         vector.push(thrust + drag);
         self.vector = VectorF64::from_slice(&vector).ok_or(GslError)?;
+
         Ok(())
     }
 
@@ -129,23 +139,27 @@ impl ConeySolverSingle {
     fn align_wake(&mut self, threshold: f64) -> Result<Vec<f64>> {
         let n = *self.prop.specs().num_panels();
         let prev_pitch = self.prop.hydro_data().hydro_pitch().clone();
+
         let circulation = loop {
             let solution = self.optimize_circulation(threshold)?;
             self.update_pitch();
             let wake_res = prev_pitch.iter().zip(self.prop.hydro_data().hydro_pitch().iter())
                 .map(|(prev, pitch)| (prev - pitch).abs()).collect::<Vec<_>>();
+
             // check convergence
-            println!("{}", wake_res.iter().sum::<f64>());
+            //println!("{}", wake_res.iter().sum::<f64>());
             if wake_res.iter().filter(|&&x| x > threshold).collect::<Vec<_>>().len() == 0 {
                 break solution;
             }
         };
+
         Ok(gsl_vecf64_to_std(&circulation))
     }
 
     // Perform circulation optimization
     // return result of optimization
     fn optimize_circulation(&mut self, threshold: f64) -> Result<VectorF64> {
+
         // calculate initial pitch values
         self.update_pitch();
         let n = *self.prop.specs().num_panels();
@@ -158,20 +172,27 @@ impl ConeySolverSingle {
         while sol_res.iter().filter(|&&x| x > threshold).collect::<Vec<_>>().len() > 0 {
             self.fill_matrix();
             self.fill_vector()?;
+
             linear_algebra::HH_solve(self.matrix.clone().unwrap(), &self.vector, &mut solution);
+
             // TODO: log stuff
             self.lagrange_mult = solution.get(n);
             println!("{}", self.lagrange_mult);
+
             // TODO: consider moving to ndarray for more ergonomic vector/array handling
             izip!(sol_res.iter_mut(), gsl_vecf64_to_std(&solution).iter(), gsl_vecf64_to_std(&sol_prev).iter())
                 .for_each(|(res, s, sp)| *res = (s - sp).abs());
+
             sol_prev.copy_from(&solution);
             self.update_velocities(&solution);
         }
+
         Ok(solution)
+
     }
 
     fn update_velocities(&mut self, solution: &VectorF64) {
+
         // TODO: implement
         let rc = self.prop.control_points();
         let z = *self.prop.geometry().num_blades();
@@ -190,6 +211,7 @@ impl ConeySolverSingle {
                 tangential_velocity[i] += solution.get(j)*flow::tangential_velocity(i, j, rc, rv, &self.vortex_pitch, rh, z);
             }
         }
+
         *self.prop.hydro_data_mut().axial_vel_ind_mut() = axial_velocity;
         *self.prop.hydro_data_mut().tangential_vel_ind_mut() = tangential_velocity;
     }
@@ -211,6 +233,7 @@ impl ConeySolverSingle {
         let n = *self.prop.specs().num_panels();
         let hpitch = self.prop.hydro_data().hydro_pitch();
         let rv = self.prop.vortex_points();
+
         // interpolate to find pitch at vortex points
         for i in 0..n-1 {
             let slope = (hpitch[i+1] - hpitch[i])/(rc[i+1] - rc[i]);
@@ -219,9 +242,11 @@ impl ConeySolverSingle {
         // extrapolate first and last vortex points
         let slope = (hpitch[1] - hpitch[0])/(rc[1] - rc[0]);
         self.vortex_pitch[0] = hpitch[0] + slope*(rv[0] - rc[0]);
+
         let slope = (hpitch[n-1] - hpitch[n-2])/(rc[n-1] - rc[n-2]);
         self.vortex_pitch[n] = hpitch[n-1] + slope*(rv[n] - rc[n-1]);
     }
+
 }
 
 impl ConeySolver for ConeySolverSingle {
