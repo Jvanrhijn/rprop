@@ -25,6 +25,7 @@ fn coney_f2(y0: f64, y: f64, z: usize) -> f64 {
     prefactor*(ufrac - 1.0/(24.0*(z as f64))*(first_frac + second_frac)*(1.0 + ufrac).ln())
 }
 
+#[allow(dead_code)]
 fn c1_jl(xf: f64, rcjm: f64, rvlp: f64) -> f64 {
     let q = 1.0 + (xf*xf + (rcjm - rvlp).powi(2))/(2.0*rcjm*rvlp);
     let s = (xf/(xf*xf + (rcjm - rvlp).powi(2)).sqrt()).asin();
@@ -38,6 +39,7 @@ fn c1_jl(xf: f64, rcjm: f64, rvlp: f64) -> f64 {
     }
 }
 
+#[allow(dead_code)]
 fn c2_jl(xf: f64, rcjm: f64, rvlp: f64) -> f64 {
     let q = 1.0 + (xf*xf + (rcjm - rvlp).powi(2))/(2.0*rcjm*rvlp);
     let s = (xf/(xf*xf + (rcjm - rvlp).powi(2)).sqrt()).asin();

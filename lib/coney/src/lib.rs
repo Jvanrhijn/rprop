@@ -84,9 +84,7 @@ impl ConeySolverSingle {
         let rv = self.prop.vortex_points();
         let dr = self.prop.radial_increment();
         let vt = self.prop.hydro_data().tangential_inflow();
-        let va = self.prop.hydro_data().axial_inflow();
         let ut = self.prop.hydro_data().tangential_vel_ind();
-        let pitch = self.prop.hydro_data().hydro_pitch();
 
         for i in 0..n {
             self.matrix.set(i, n, (vt[i] + w*rc[i])*dr[i]);
@@ -105,7 +103,6 @@ impl ConeySolverSingle {
 
     fn fill_vector(&mut self) -> Result<()> {
         let cd = self.prop.hydro_data().drag_coeffs();
-        let va = self.prop.hydro_data().axial_inflow();
         let pitch = self.prop.hydro_data().hydro_pitch();
         let rc = self.prop.control_points();
         let dr = self.prop.radial_increment();
@@ -137,7 +134,6 @@ impl ConeySolverSingle {
 
     // Perform wake alignment, update propeller data (velocities, pitch)
     fn align_wake(&mut self, threshold: f64) -> Result<Vec<f64>> {
-        let n = *self.prop.specs().num_panels();
         let prev_pitch = self.prop.hydro_data().hydro_pitch().clone();
 
         let circulation = loop {
@@ -173,11 +169,14 @@ impl ConeySolverSingle {
             self.fill_matrix();
             self.fill_vector()?;
 
-            linear_algebra::HH_solve(self.matrix.clone().unwrap(), &self.vector, &mut solution);
+            match linear_algebra::HH_solve(self.matrix.clone().unwrap(), &self.vector, &mut solution) {
+                rgsl::Value::Success => Ok(()),
+                _                    => Err(GslError)
+            }?;
 
             // TODO: log stuff
             self.lagrange_mult = solution.get(n);
-            println!("{}", self.lagrange_mult);
+            //println!("{}", self.lagrange_mult);
 
             // TODO: consider moving to ndarray for more ergonomic vector/array handling
             izip!(sol_res.iter_mut(), gsl_vecf64_to_std(&solution).iter(), gsl_vecf64_to_std(&sol_prev).iter())
@@ -198,9 +197,6 @@ impl ConeySolverSingle {
         let z = *self.prop.geometry().num_blades();
         let rv = self.prop.vortex_points();
         let rh = *self.prop.geometry().hub_radius();
-        let w = *self.prop.specs().rot_speed();
-        let va = self.prop.hydro_data().axial_inflow();
-        let vt = self.prop.hydro_data().tangential_inflow();
         let n = *self.prop.specs().num_panels();
         let mut axial_velocity = vec![0.0; n];
         let mut tangential_velocity = vec![0.0; n];
