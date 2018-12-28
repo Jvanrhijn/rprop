@@ -37,6 +37,7 @@ pub struct Geometry {
     num_blades: usize,
     #[get = "pub"] #[get_mut = "pub"]
     chords: Vec<f64>,
+    #[get = "pub"] #[get_mut = "pub"]
     base_airfoil: Airfoil
 }
 

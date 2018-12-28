@@ -8,6 +8,8 @@ edition = "2018"
 members = ["lib/airfoil", "lib/math"]
 
 [dependencies]
+rs-xfoil = "0.0.1"
+itertools = "0.8.0"
 math = { path = "lib/math" }
 airfoil = { path = "lib/airfoil" }
 propeller = { path = "lib/propeller" }

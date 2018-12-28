@@ -1,3 +1,5 @@
+#[macro_use]
+extern crate itertools;
 use coney::{
     ConeySolver,
     ConeySolverSingle
@@ -5,6 +7,8 @@ use coney::{
 use propeller::{
     PropellerBuilder,
 };
+
+mod geometry;
 
 
 fn main() {
